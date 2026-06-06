@@ -134,6 +134,21 @@ const targets = singleFlag
     })
   : allTargets
 
+// Allow cross-building a single named target (e.g. self-hosted linux-x64 from a Mac):
+//   OPENCODE_BUILD_TARGET=linux-x64 bun run script/build.ts
+// The value is matched against the generated target name (os-arch[-baseline][-musl]).
+const onlyTarget = process.env["OPENCODE_BUILD_TARGET"]
+const targetName = (item: (typeof allTargets)[number]) =>
+  [item.os === "win32" ? "windows" : item.os, item.arch, item.avx2 === false ? "baseline" : undefined, item.abi]
+    .filter(Boolean)
+    .join("-")
+const selectedTargets = onlyTarget ? allTargets.filter((item) => targetName(item) === onlyTarget) : targets
+if (onlyTarget && selectedTargets.length === 0) {
+  console.error(`No build target matches OPENCODE_BUILD_TARGET=${onlyTarget}`)
+  console.error(`Available: ${allTargets.map(targetName).join(", ")}`)
+  process.exit(1)
+}
+
 await $`rm -rf dist`
 
 const binaries: Record<string, string> = {}
@@ -141,7 +156,7 @@ if (!skipInstall) {
   await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
   await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
 }
-for (const item of targets) {
+for (const item of selectedTargets) {
   const name = [
     pkg.name,
     // changing to win32 flags npm for some reason

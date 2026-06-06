@@ -50,6 +50,25 @@ function textBytes(bytes: Uint8Array) {
   return count / bytes.length <= 0.3
 }
 
+// Map common binary/office/archive extensions to a representative MIME so that
+// files dropped without a reliable file.type still get a sensible mime. These
+// are handled server-side (spill-to-disk + bash/python), not embedded inline.
+const BINARY_EXTS = new Map([
+  ["docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  ["doc", "application/msword"],
+  ["xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+  ["xls", "application/vnd.ms-excel"],
+  ["pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+  ["ppt", "application/vnd.ms-powerpoint"],
+  ["zip", "application/zip"],
+  ["tar", "application/x-tar"],
+  ["gz", "application/gzip"],
+  ["tgz", "application/gzip"],
+  ["bz2", "application/x-bzip2"],
+  ["7z", "application/x-7z-compressed"],
+  ["rar", "application/vnd.rar"],
+])
+
 export async function attachmentMime(file: File) {
   const type = kind(file.type)
   if (IMAGE_MIMES.has(type)) return type
@@ -60,7 +79,15 @@ export async function attachmentMime(file: File) {
   if ((!type || type === "application/octet-stream") && fallback) return fallback
 
   if (textMime(type)) return "text/plain"
+
+  // Probe the leading bytes: genuine text files are sent as text/plain so the
+  // backend inlines them; anything binary is spilled to disk by the server.
   const bytes = new Uint8Array(await file.slice(0, SAMPLE).arrayBuffer())
-  if (!textBytes(bytes)) return
-  return "text/plain"
+  if (textBytes(bytes)) return "text/plain"
+
+  // Binary file: prefer a real file.type, then an extension-based guess, and
+  // finally a generic octet-stream. Never return undefined — the server decides
+  // how to handle it (spill to disk, then read via bash/python).
+  if (type && type !== "application/octet-stream") return type
+  return BINARY_EXTS.get(suffix) ?? "application/octet-stream"
 }

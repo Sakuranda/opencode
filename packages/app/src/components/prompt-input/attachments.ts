@@ -8,6 +8,11 @@ import { getCursorPosition } from "./editor-dom"
 import { attachmentMime } from "./files"
 import { normalizePaste, pasteMode } from "./paste"
 
+// Files are sent inline as base64 inside the chat message. base64 inflates by
+// ~33%, so cap the raw size to keep the request body well under server limits.
+// Larger files should be transferred out-of-band (scp / future upload endpoint).
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+
 function dataUrl(file: File, mime: string) {
   return new Promise<string>((resolve) => {
     const reader = new FileReader()
@@ -46,6 +51,16 @@ export function createPromptAttachments(input: PromptAttachmentsInput) {
   }
 
   const add = async (file: File, toast = true) => {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      if (toast) {
+        showToast({
+          title: language.t("prompt.toast.fileTooLarge.title"),
+          description: language.t("prompt.toast.fileTooLarge.description"),
+        })
+      }
+      return false
+    }
+
     const mime = await attachmentMime(file)
     if (!mime) {
       if (toast) warn()

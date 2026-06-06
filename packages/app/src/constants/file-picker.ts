@@ -53,6 +53,31 @@ export const ACCEPTED_FILE_TYPES = [
   ".yaml",
   ".yml",
   ".zsh",
+  // Office documents and archives — handled server-side via spill-to-disk + bash/python
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/octet-stream",
+  // Generic catch-all so the browser file dialog accepts any file
+  "*/*",
+  ".docx",
+  ".doc",
+  ".xlsx",
+  ".xls",
+  ".pptx",
+  ".ppt",
+  ".zip",
+  ".tar",
+  ".gz",
+  ".tgz",
+  ".bz2",
+  ".7z",
+  ".rar",
 ]
 
 const MIME_EXT = new Map([
@@ -68,6 +93,14 @@ const MIME_EXT = new Map([
   ["application/x-yaml", "yaml"],
   ["application/xml", "xml"],
   ["application/yaml", "yaml"],
+  ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"],
+  ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"],
+  ["application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx"],
+  ["application/msword", "doc"],
+  ["application/vnd.ms-excel", "xls"],
+  ["application/vnd.ms-powerpoint", "ppt"],
+  ["application/zip", "zip"],
+  ["application/x-zip-compressed", "zip"],
 ])
 
 const TEXT_EXT = ["txt", "text", "md", "markdown", "log", "csv"]

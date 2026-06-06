@@ -41,6 +41,7 @@ import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Truncate } from "@/tool/truncate"
 import { Image } from "@/image/image"
 import { decodeDataUrl } from "@/util/data-url"
+import { AttachmentSpill } from "./attachment-spill"
 import { Process } from "@/util/process"
 import { Cause, Effect, Exit, Latch, Layer, Option, Scope, Context, Schema, Types } from "effect"
 import * as EffectLogger from "@opencode-ai/core/effect/logger"
@@ -690,6 +691,9 @@ export const layer = Layer.effect(
         throw error
       }
 
+      // Working directory for this instance — used to spill binary attachments to disk.
+      const messageCtx = yield* InstanceState.context
+
       const current = yield* db
         .select({ agent: SessionTable.agent, model: SessionTable.model })
         .from(SessionTable)
@@ -831,6 +835,47 @@ export const layer = Layer.effect(
                     text: decodeDataUrl(part.url),
                   },
                   { ...part, messageID: info.id, sessionID: input.sessionID },
+                ]
+              }
+              // Images and PDFs keep their native path (provider vision / PDF support).
+              // Any other binary (Word/Excel/PowerPoint/ZIP/...) is spilled to disk so
+              // the AI can read it with the bash tool instead of choking on base64.
+              if (!part.mime.startsWith("image/") && part.mime !== "application/pdf") {
+                const filename = part.filename ?? "file"
+                const spill = yield* AttachmentSpill.materialize({
+                  fsys,
+                  cwd: messageCtx.directory,
+                  sessionID: input.sessionID,
+                  partID: part.id ?? PartID.ascending(),
+                  filename,
+                  url: part.url,
+                }).pipe(Effect.exit)
+                if (Exit.isSuccess(spill)) {
+                  const { relativePath, sizeBytes } = spill.value
+                  return [
+                    {
+                      messageID: info.id,
+                      sessionID: input.sessionID,
+                      type: "text",
+                      synthetic: true,
+                      text:
+                        `[Attached file: ${filename} (${AttachmentSpill.humanSize(sizeBytes)}, ${part.mime})]\n` +
+                        `Saved to: ${relativePath}\n` +
+                        `Read it with the bash tool (python-docx / openpyxl / python-pptx / unzip). See AGENTS.md.`,
+                    },
+                  ]
+                }
+                const error = Cause.squash(spill.cause)
+                log.error("failed to spill attachment", { error, filename })
+                const message = error instanceof Error ? error.message : String(error)
+                return [
+                  {
+                    messageID: info.id,
+                    sessionID: input.sessionID,
+                    type: "text",
+                    synthetic: true,
+                    text: `Failed to save attached file ${filename}: ${message}`,
+                  },
                 ]
               }
               break
