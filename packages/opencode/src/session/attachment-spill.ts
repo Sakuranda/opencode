@@ -29,13 +29,19 @@ export namespace AttachmentSpill {
     return new Uint8Array(Buffer.from(decodeURIComponent(body), "utf8"))
   }
 
-  /** Strip path separators and unsafe characters from a user-supplied filename. */
+  /** Strip path separators and unsafe characters from a user-supplied filename.
+   * Unicode characters (Chinese, Japanese, etc.) are preserved. */
   export function sanitize(name: string): string {
     const base = name.split(/[\\/]/).pop() ?? "file"
     let clean = base
-      .replace(/[^A-Za-z0-9._-]/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^\.+/, "")
+      // Remove NUL bytes, control characters, and shell-dangerous chars.
+      // Keep Unicode letters/digits (Chinese, Japanese, etc.), spaces → underscore.
+      .replace(/[\x00-\x1f\x7f]/g, "")   // control chars
+      .replace(/[<>:"|?*]/g, "_")          // Windows-unsafe + shell-risky
+      .replace(/\s+/g, "_")               // whitespace to underscore
+      .replace(/_+/g, "_")                // collapse multiple underscores
+      .replace(/^[._]+/, "")              // no leading dot/underscore
+      .replace(/[._]+$/, "")              // no trailing dot/underscore
     if (!clean) clean = "file"
     if (clean.length > 200) {
       const dot = clean.lastIndexOf(".")
