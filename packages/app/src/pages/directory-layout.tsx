@@ -5,9 +5,15 @@ import { useLocation, useNavigate, useParams } from "@solidjs/router"
 import { createEffect, createMemo, createResource, type ParentProps, Show } from "solid-js"
 import { useLanguage } from "@/context/language"
 import { LocalProvider } from "@/context/local"
-import { SDKProvider } from "@/context/sdk"
+import { SDKProvider, useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { decode64 } from "@/utils/base64"
+import {
+  fileResultToBlob,
+  filenameFromPath,
+  triggerBrowserDownload,
+  type FileReadResult,
+} from "@/utils/download"
 import { Schema } from "effect"
 
 function DirectoryDataProvider(props: ParentProps<{ directory: string }>) {
@@ -15,6 +21,8 @@ function DirectoryDataProvider(props: ParentProps<{ directory: string }>) {
   const navigate = useNavigate()
   const params = useParams()
   const sync = useSync()
+  const sdk = useSDK()
+  const language = useLanguage()
   const slug = createMemo(() => base64Encode(props.directory))
 
   createEffect(() => {
@@ -29,12 +37,29 @@ function DirectoryDataProvider(props: ParentProps<{ directory: string }>) {
     (id) => sync.session.sync(id).catch(() => {}),
   )
 
+  const downloadFile = (path: string) => {
+    sdk.client.file
+      .read({ path })
+      .then((x) => {
+        const result = x.data as FileReadResult | undefined
+        if (!result) throw new Error("empty file response")
+        triggerBrowserDownload(fileResultToBlob(result), filenameFromPath(path))
+      })
+      .catch(() => {
+        showToast({
+          variant: "error",
+          title: language.t("toast.file.downloadFailed.title"),
+        })
+      })
+  }
+
   return (
     <DataProvider
       data={sync.data}
       directory={props.directory}
       onNavigateToSession={(sessionID: string) => navigate(`/${slug()}/session/${sessionID}`)}
       onSessionHref={(sessionID: string) => `/${slug()}/session/${sessionID}`}
+      onDownloadFile={downloadFile}
     >
       <LocalProvider>{props.children}</LocalProvider>
     </DataProvider>

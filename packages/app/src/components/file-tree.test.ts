@@ -29,6 +29,13 @@ beforeAll(async () => {
   mock.module("@opencode-ai/ui/file-icon", () => ({ FileIcon: () => null }))
   mock.module("@opencode-ai/ui/icon", () => ({ Icon: () => null }))
   mock.module("@opencode-ai/ui/tooltip", () => ({ Tooltip: (props: { children?: unknown }) => props.children }))
+  mock.module("@opencode-ai/ui/icon-button", () => ({ IconButton: () => null }))
+  mock.module("@opencode-ai/ui/context/data", () => ({
+    useData: () => ({ downloadFile: undefined }),
+  }))
+  mock.module("@opencode-ai/ui/context/i18n", () => ({
+    useI18n: () => ({ t: (key: string) => key }),
+  }))
   const mod = await import("./file-tree")
   shouldListRoot = mod.shouldListRoot
   shouldListExpanded = mod.shouldListExpanded
