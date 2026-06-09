@@ -32,6 +32,7 @@ import { showToast } from "@/utils/toast"
 import { checksum } from "@opencode-ai/core/util/encode"
 import { useLocation, useSearchParams } from "@solidjs/router"
 import { NewSessionDesignView, NewSessionView, SessionHeader } from "@/components/session"
+import FileTree from "@/components/file-tree"
 import { useComments } from "@/context/comments"
 import { getSessionPrefetch, SESSION_PREFETCH_TTL } from "@/context/global-sync/session-prefetch"
 import { useServerSync } from "@/context/server-sync"
@@ -383,7 +384,7 @@ export default function Page() {
 
   const [store, setStore] = createStore({
     messageId: undefined as string | undefined,
-    mobileTab: "session" as "session" | "changes",
+    mobileTab: "session" as "session" | "changes" | "files",
     changes: "git" as ChangeMode,
     newSessionWorktree: "main",
     deferRender: false,
@@ -453,6 +454,7 @@ export default function Page() {
     return list
   })
   const mobileChanges = createMemo(() => !isDesktop() && store.mobileTab === "changes")
+  const mobileFiles = createMemo(() => !isDesktop() && store.mobileTab === "files")
   const wantsReview = createMemo(() =>
     isDesktop()
       ? desktopFileTreeOpen() || (desktopReviewOpen() && activeTab() === "review")
@@ -1723,7 +1725,7 @@ export default function Page() {
             <Tabs.List>
               <Tabs.Trigger
                 value="session"
-                class="!w-1/2 !max-w-none"
+                class="!w-1/3 !max-w-none"
                 classes={{ button: "w-full" }}
                 onClick={() => setStore("mobileTab", "session")}
               >
@@ -1731,13 +1733,21 @@ export default function Page() {
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="changes"
-                class="!w-1/2 !max-w-none !border-r-0"
+                class="!w-1/3 !max-w-none"
                 classes={{ button: "w-full" }}
                 onClick={() => setStore("mobileTab", "changes")}
               >
                 {hasReview()
                   ? language.t("session.review.filesChanged", { count: reviewCount() })
                   : language.t("session.review.change.other")}
+              </Tabs.Trigger>
+              <Tabs.Trigger
+                value="files"
+                class="!w-1/3 !max-w-none !border-r-0"
+                classes={{ button: "w-full" }}
+                onClick={() => setStore("mobileTab", "files")}
+              >
+                {language.t("session.files.all")}
               </Tabs.Trigger>
             </Tabs.List>
           </Tabs>
@@ -1774,6 +1784,15 @@ export default function Page() {
                     loadingClass: "px-4 py-4 text-text-weak",
                     emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
                   })}
+                </div>
+              </Match>
+              <Match when={params.id && mobileFiles()}>
+                <div class="h-full overflow-y-auto bg-background-stronger px-3 pt-3 group/filetree">
+                  <FileTree
+                    path=""
+                    modified={[]}
+                    onFileClick={(node) => setStore("mobileTab", "session")}
+                  />
                 </div>
               </Match>
               <Match when={params.id}>
