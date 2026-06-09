@@ -429,7 +429,7 @@ export function SessionSidePanel(props: {
                         <Match when={nofiles()}>{empty(language.t("session.files.empty"))}</Match>
                         <Match when={true}>
                           <FileTree
-                            path={settings.general.fileTreeRoot()}
+                            path={params.id ? `uploads/${params.id}` : settings.general.fileTreeRoot()}
                             class="pt-3"
                             modified={diffFiles()}
                             kinds={kinds()}

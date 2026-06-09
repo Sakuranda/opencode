@@ -1789,7 +1789,7 @@ export default function Page() {
               <Match when={params.id && mobileFiles()}>
                 <div class="h-full overflow-y-auto bg-background-stronger px-3 pt-3 group/filetree">
                   <FileTree
-                    path={settings.general.fileTreeRoot()}
+                    path={params.id ? `uploads/${params.id}` : settings.general.fileTreeRoot()}
                     modified={[]}
                     onFileClick={(node) => setStore("mobileTab", "session")}
                   />
