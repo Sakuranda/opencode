@@ -829,6 +829,8 @@ export const dict = {
   "settings.general.row.followup.option.steer": "Steer",
   "settings.general.row.showFileTree.title": "File tree",
   "settings.general.row.showFileTree.description": "Show the file tree panel in desktop sessions",
+  "settings.general.row.fileTreeRoot.title": "File tree root path",
+  "settings.general.row.fileTreeRoot.description": "Root directory shown in the file tree. Defaults to \"uploads\" (your uploaded files). Set to \".\" to show the entire workspace.",
   "settings.general.row.showNavigation.title": "Navigation controls",
   "settings.general.row.showNavigation.description": "Show the back and forward buttons in the desktop title bar",
   "settings.general.row.showSearch.title": "Command palette",

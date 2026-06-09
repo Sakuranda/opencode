@@ -441,6 +441,28 @@ export const SettingsGeneral: Component = () => {
         </SettingsRow>
 
         <SettingsRow
+          title={language.t("settings.general.row.fileTreeRoot.title")}
+          description={language.t("settings.general.row.fileTreeRoot.description")}
+        >
+          <div class="w-full sm:w-[220px]">
+            <TextField
+              data-action="settings-file-tree-root"
+              label={language.t("settings.general.row.fileTreeRoot.title")}
+              hideLabel
+              type="text"
+              value={settings.general.fileTreeRoot()}
+              onChange={(value) => settings.general.setFileTreeRoot(value)}
+              placeholder="uploads"
+              spellcheck={false}
+              autocorrect="off"
+              autocomplete="off"
+              autocapitalize="off"
+              class="text-12-regular"
+            />
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
           title={language.t("settings.general.row.showNavigation.title")}
           description={language.t("settings.general.row.showNavigation.description")}
         >

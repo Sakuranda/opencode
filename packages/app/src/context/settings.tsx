@@ -24,6 +24,7 @@ export interface Settings {
     releaseNotes: boolean
     followup: "queue" | "steer"
     showFileTree: boolean
+    fileTreeRoot: string
     showNavigation: boolean
     showSearch: boolean
     showStatus: boolean
@@ -112,6 +113,7 @@ const defaultSettings: Settings = {
     releaseNotes: true,
     followup: "steer",
     showFileTree: true,
+    fileTreeRoot: "uploads",
     showNavigation: false,
     showSearch: false,
     showStatus: false,
@@ -196,6 +198,10 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         showFileTree: withFallback(() => store.general?.showFileTree, defaultSettings.general.showFileTree),
         setShowFileTree(value: boolean) {
           setStore("general", "showFileTree", value)
+        },
+        fileTreeRoot: withFallback(() => store.general?.fileTreeRoot, defaultSettings.general.fileTreeRoot),
+        setFileTreeRoot(value: string) {
+          setStore("general", "fileTreeRoot", value || defaultSettings.general.fileTreeRoot)
         },
         showNavigation: withFallback(() => store.general?.showNavigation, defaultSettings.general.showNavigation),
         setShowNavigation(value: boolean) {
