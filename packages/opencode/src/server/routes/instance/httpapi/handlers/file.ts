@@ -55,6 +55,13 @@ export const fileHandlers = HttpApiBuilder.group(InstanceHttpApi, "file", (handl
 
     const list = Effect.fn("FileHttpApi.list")(function* (ctx: { query: { path: string } }) {
       const directory = (yield* InstanceState.context).directory
+      const target = path.resolve(directory, ctx.query.path)
+      // Guard against listing paths that escape the workspace.
+      if (!FSUtil.contains(directory, target) && target !== directory)
+        return yield* Effect.die(new Error("Path escapes the location"))
+      // A non-existent directory (e.g. uploads/<sessionID> before any upload)
+      // is not an error — return an empty listing instead of failing the request.
+      if (!(yield* FSUtil.Service.use((fs) => fs.existsSafe(target)))) return []
       return yield* filesystem(
         FileSystem.Service.use((fs) =>
           fs.list({ path: RelativePath.make(ctx.query.path) }).pipe(
